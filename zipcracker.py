@@ -4,15 +4,14 @@ import argparse
 import sys
 import os
 import zlib
-from zipheaderParse import *
+from parseZip import *
 
-# FIXME controllare CRC dei file estratti
 def crcCheck(zf,f):
     prev = 0
     for line in open(f,"rb"):
         prev = zlib.crc32(line, prev)
     crc32 = "%X"%(prev & 0xffffffff)
-    if crc32 == mao_func(f.name)['crc32']:
+    if crc32 == getCdhEntry(zf,f.name)['crc32']:
         return True
     return False
 
