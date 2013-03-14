@@ -41,7 +41,7 @@ def createCdhEntry(cdh_entry):
 def printCdh(f):
 	cdh = extractCdh(f)
 	for entry in cdh:
-		print createCdhEntry(entry)
+		print(createCdhEntry(entry))
 
 def getCdhEntry(zipname, filename):
 	cdh = extractCdh(open(zipname).read())
@@ -49,4 +49,4 @@ def getCdhEntry(zipname, filename):
 	
 if __name__ == "__main__":
 	printCdh(open(sys.argv[1]).read())
-	print getCdhEntry('crypted.zip','plain')['crc32']
+	print(getCdhEntry('crypted.zip','plain')['crc32'])
