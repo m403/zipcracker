@@ -4,10 +4,9 @@ def extractCdh(zipFile):
     indList = [0]
     while True:
         try:
-            indList.append(zipFile.rindex(bytes("\x50\x4b\x01\x02","ascii"), indList[-1]+1, len(zipFile)))
+            indList.append(zipFile.index(bytes("\x50\x4b\x01\x02","ascii"), indList[-1]+1, len(zipFile)))
         except:
             break
-    print(indList)
     indList = indList[1:]
     indList.append(len(zipFile))
     return [zipFile[indList[i]:indList[i+1]] for i in range(len(indList)-1)]
@@ -45,10 +44,10 @@ def printCdh(f):
 		print(createCdhEntry(entry))
 
 def getCdhEntry(zipname, filename):
-    cdh = extractCdh(open(zipname, "rb").read())
-    print(cdh)
-    return [createCdhEntry(entry) for entry in cdh if createCdhEntry(entry)['filename'] == filename][0]
+    cdh = extractCdh(zipname)
+    return [createCdhEntry(entry) for entry in cdh if createCdhEntry(entry)['filename'] == bytes(filename,"ascii")][0]
 
 if __name__ == "__main__":
-	printCdh("zippo.zip")
-	print(getCdhEntry('zippo.zip','zipcracker_arg.py')['crc32'])
+	zipname = open("crypted.zip", "rb").read()
+	printCdh(zipname)
+	print(getCdhEntry(zipname,'plain')['crc32'])
