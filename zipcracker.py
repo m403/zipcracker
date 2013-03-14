@@ -1,29 +1,26 @@
 import zipfile
 import time
 import argparse
-import sys
 import os
 import zlib
 from parseZip import *
 
+# FIXME for zip with more file than one
 def crcCheck(zf,f):
     prev = 0
-    for line in open(f,"rb"):
+    for line in open("./extracted/"+f, "rb"):
         prev = zlib.crc32(line, prev)
-    crc32 = "%X"%(prev & 0xffffffff)
+    crc32 = struct.pack("<I",(prev & 0xffffffff))
 
     try:
-        fz = open("zippo.zip","rb").read()
-    except:
-        print("fuffa")
+        zf = open(zf,"rb").read()
+    except Exception as e:
+        print("[-] ERROR = " + str(e))
 
-    print(bytes(crc32,"ascii"))
-    print(getCdhEntry(fz,f)['crc32'])
-
-    if bytes(crc32,"ascii") == getCdhEntry(fz,f)['crc32']:
-        print("FOUND!!!!!")
+    if crc32 == getCdhEntry(zf,f)['crc32']:
         return True
-    return False
+    else:
+        return False
 
 def extractfile(f,p):
     try:
