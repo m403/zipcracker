@@ -48,6 +48,6 @@ def getCdhEntry(zipname, filename):
     return [createCdhEntry(entry) for entry in cdh if createCdhEntry(entry)['filename'] == bytes(filename,"ascii")][0]
 
 if __name__ == "__main__":
-	zipname = open("crypted.zip", "rb").read()
+	zipname = open(sys.argv[1], "rb").read()
 	printCdh(zipname)
 	print(getCdhEntry(zipname,'plain')['crc32'])
