@@ -11,7 +11,17 @@ def crcCheck(zf,f):
     for line in open(f,"rb"):
         prev = zlib.crc32(line, prev)
     crc32 = "%X"%(prev & 0xffffffff)
-    if crc32 == getCdhEntry(zf,f.name)['crc32']:
+
+    try:
+        fz = open("zippo.zip","rb").read()
+    except:
+        print("fuffa")
+
+    print(bytes(crc32,"ascii"))
+    print(getCdhEntry(fz,f)['crc32'])
+
+    if bytes(crc32,"ascii") == getCdhEntry(fz,f)['crc32']:
+        print("FOUND!!!!!")
         return True
     return False
 
@@ -19,8 +29,9 @@ def extractfile(f,p):
     try:
         f.extractall(path = "./extracted",pwd = bytes(p,'ascii'))
         for x in os.listdir("./extracted"):
-            if crcCheck(f,x) == False:
+            if crcCheck(f.filename,x) == False:
                 return
+        return p
     except:
         return
 
@@ -69,7 +80,7 @@ def main():
             if guess:
                 print("[+] PASSWORD = " + password +\
                     "\t(cracked in %.5s sec)" % str(time.time()-start))
-                #exit(0)
+                exit(0)
         print("[-] Password not found")
     elif mode == "brute":
         print("Not implemented yet")
