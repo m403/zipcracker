@@ -6,27 +6,22 @@ import zlib
 from parseZip import *
 
 # FIXME for zip with more file than one
-def crcCheck(zf,f):
+def crcCheck(d, f):
     prev = 0
     for line in open("./extracted/"+f, "rb"):
         prev = zlib.crc32(line, prev)
     crc32 = struct.pack("<I",(prev & 0xffffffff))
 
-    try:
-        zf = open(zf,"rb").read()
-    except Exception as e:
-        print("[-] ERROR = " + str(e))
-
-    if crc32 == getCdhEntry(zf,f)['crc32']:
+    if crc32 == getCdhEntry(d, f)['crc32']:
         return True
     else:
         return False
 
-def extractfile(f,p):
+def extractfile(f, d, p):
     try:
         f.extractall(path = "./extracted",pwd = bytes(p,'ascii'))
         for x in os.listdir("./extracted"):
-            if crcCheck(f.filename,x) == False:
+            if crcCheck(d, x) == False:
                 return
         return p
     except:
@@ -65,6 +60,7 @@ def main():
 
     try:
         zfile = zipfile.ZipFile(zname)
+        zdata = open(zname,"rb").read()
     except Exception as e:
         print("[-] ERROR = " + str(e))
         exit(0)
@@ -73,7 +69,7 @@ def main():
         passfile = open(dname, 'r')
         for line in passfile.readlines():
             password = line.strip("\r\n")
-            guess = extractfile(zfile,password)
+            guess = extractfile(zfile, zdata, password)
             if guess:
                 print("[+] PASSWORD = " + password +\
                     "\t(cracked in %.5s sec)" % str(time.time()-start))
