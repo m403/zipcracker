@@ -18,7 +18,7 @@ def crcCheck(d, f):
 
 def extractfile(f, d, p):
     try:
-        f.extractall(path = "./extracted",pwd = bytes(p,'ascii'))
+        f.extractall(path = "./extracted",pwd = p)
         for x in os.listdir("./extracted"):
             if crcCheck(d, x) == False:
                 return
@@ -65,14 +65,15 @@ def main():
         exit(0)
 
     if mode == "dict":
-        passfile = open(dname, 'r')
+        passfile = open(dname, 'rb')
         for line in passfile.readlines():
-            password = line.strip("\r\n")
-            guess = extractfile(zfile, zdata, password)
-            if guess:
-                print("[+] PASSWORD = " + password +\
-                    "\t(cracked in %.5s sec)" % str(time.time()-start))
-                exit(0)
+            if line[:2] != bytes("#!","ascii"):
+                password = line.strip()
+                guess = extractfile(zfile, zdata, password)
+                if guess:
+                    print("[+] PASSWORD = " + str(password)[2:-1] +\
+                        "\t(cracked in %.5s sec)" % str(time.time()-start))
+                    exit(0)
         print("[-] Password not found")
     elif mode == "brute":
         print("Not implemented yet")
