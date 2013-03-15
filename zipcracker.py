@@ -5,7 +5,6 @@ import os
 import zlib
 from parseZip import *
 
-# FIXME for zip with more file than one
 def crcCheck(d, f):
     prev = 0
     for line in open("./extracted/"+f, "rb"):
