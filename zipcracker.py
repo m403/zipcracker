@@ -1,21 +1,25 @@
-import zipfile, argparse
-import os, zlib
+import zipfile
+import zlib
+import argparse
+import os
 import time
 import errno
-from parseZip import *
 
-def crcCheck(d, f):
+from parseZip import getCdhEntry
+
+def crc_check(zdata, dest_dir, file_to_check):
     prev = 0
-    for line in open("./extracted/"+f, "rb"):
+    for line in open(exdir + "/" + file_to_check, "rb"):
         prev = zlib.crc32(line, prev)
     crc32 = struct.pack("<I",(prev & 0xffffffff))
-    return True if crc32 == getCdhEntry(d, f)['crc32'] else False
+    return True if crc32 == getCdhEntry(zdata, file_to_check)['crc32'] else False
 
-def extractfile(f, d, p):
+def extract_file(zfile, zdata, pwd):
+    dest_dir = "./" + os.path.splitext(zfile.filename)[0]
     try:
-        f.extractall(path = "./extracted",pwd = p)
-        for x in os.listdir("./extracted"):
-            if not crcCheck(d, x): raise Exception("Bad CRC!!")
+        f.extractall(path = dest_dir, pwd = pwd)
+        for x in os.listdir(dest_dir):
+            if not crc_check(zdata, dest_dir, x): raise Exception("Bad CRC!!")
         return True
     except: return False
 
@@ -55,12 +59,11 @@ def main():
     if mode == "dict":
         passfile = open(dname, 'rb').readlines()
         for line in passfile:
-            if line[:2] != bytes("#!","ascii"):
-                password = line.strip()
-                if extractfile(zfile, zdata, password):
-                    print("[+] PASSWORD = " + str(password)[2:-1] +\
-                        "\t(cracked in %.5s sec)" % str(time.time()-start))
-                    exit(0)
+            password = line.strip()
+            if extract_file(zfile, zdata, password):
+                print("[+] PASSWORD = " + str(password)[2:-1] +\
+                    "\t(cracked in %.5s sec)" % str(time.time()-start))
+                exit(0)
         print("[-] Password not found")
     elif mode == "brute":
         print("Not implemented yet")
