@@ -4,24 +4,30 @@ import argparse
 import os
 import time
 import errno
+import struct
 
 from parseZip import getCdhEntry
 
+DEBUG = False
+
 def crc_check(zdata, dest_dir, file_to_check):
     prev = 0
-    for line in open(exdir + "/" + file_to_check, "rb"):
+    for line in open(dest_dir + "/" + file_to_check, "rb"):
         prev = zlib.crc32(line, prev)
     crc32 = struct.pack("<I",(prev & 0xffffffff))
     return True if crc32 == getCdhEntry(zdata, file_to_check)['crc32'] else False
 
-def extract_file(zfile, zdata, pwd):
+def extract_file(zfile, zdata, password):
     dest_dir = "./" + os.path.splitext(zfile.filename)[0]
     try:
-        f.extractall(path = dest_dir, pwd = pwd)
+        zfile.extractall(path = dest_dir, pwd = password)
         for x in os.listdir(dest_dir):
             if not crc_check(zdata, dest_dir, x): raise Exception("Bad CRC!!")
         return True
-    except: return False
+    except Exception as e:
+        if DEBUG is True:
+            print("[-] ERROR = " + str(e))
+        return False
 
 def main():
     start = time.time()
