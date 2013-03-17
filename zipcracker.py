@@ -2,9 +2,9 @@ import zipfile
 import zlib
 import argparse
 import os
-import time
 import errno
 import struct
+from time import time
 
 from parseZip import getCdhEntry
 
@@ -29,8 +29,20 @@ def extract_file(zfile, zdata, password):
             print("[-] ERROR = " + str(e))
         return False
 
+def success(start_time, pwd):
+    total_time = time() - start_time
+    print("[+] PASSWORD = " + pwd + "\t(cracked in %.5s sec)" % str(total_time))
+
+def dict_mode(zfile, zdata, dictionary):
+    passwords = open(dictionary, 'rb').readlines()
+    for pwd in passwords:
+        if extract_file(zfile, zdata, pwd.strip()):
+            return pwd.strip().decode("ascii")
+    #return(''.join([pwd.strip().decode("ascii")
+                    #for pwd in passwords if extract_file(zfile, zdata, pwd.strip())]))
+
 def main():
-    start = time.time()
+    start = time()
 
     parser = argparse.ArgumentParser(description = "Zip file cracker",version="1.0")
     parser.add_argument("-f", dest = 'zname',type = str,\
@@ -63,13 +75,10 @@ def main():
         exit(errno.ENOENT)
 
     if mode == "dict":
-        passfile = open(dname, 'rb').readlines()
-        for line in passfile:
-            password = line.strip()
-            if extract_file(zfile, zdata, password):
-                print("[+] PASSWORD = " + str(password)[2:-1] +\
-                    "\t(cracked in %.5s sec)" % str(time.time()-start))
-                exit(0)
+        pwd = dict_mode(zfile, zdata, dname)
+        if pwd:
+            success(start, pwd)
+            exit(0)
         print("[-] Password not found")
     elif mode == "brute":
         print("Not implemented yet")
