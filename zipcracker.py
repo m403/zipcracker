@@ -1,8 +1,7 @@
-import zipfile
+import zipfile, argparse
+import os, zlib
 import time
-import argparse
-import os
-import zlib
+import errno
 from parseZip import *
 
 def crcCheck(d, f):
@@ -10,21 +9,15 @@ def crcCheck(d, f):
     for line in open("./extracted/"+f, "rb"):
         prev = zlib.crc32(line, prev)
     crc32 = struct.pack("<I",(prev & 0xffffffff))
-
-    if crc32 == getCdhEntry(d, f)['crc32']:
-        return True
-    else:
-        return False
+    return True if crc32 == getCdhEntry(d, f)['crc32'] else False
 
 def extractfile(f, d, p):
     try:
         f.extractall(path = "./extracted",pwd = p)
         for x in os.listdir("./extracted"):
-            if crcCheck(d, x) == False:
-                return
-        return p
-    except:
-        return
+            if not crcCheck(d, x): raise Exception("Bad CRC!!")
+        return True
+    except: return False
 
 def main():
     start = time.time()
@@ -40,17 +33,12 @@ def main():
                       help = "specify the charset used in the bruteforce mode")
     args = parser.parse_args()
 
-    if (args.zname == None) or (args.dname == None and args.mode == "dict"):
+    # BEAUTIFY ME!!!!
+    if ((args.zname == None) or (args.dname == None and args.mode == "dict")) or \
+       (args.mode != "dict" and args.mode != "brute") or \
+       (args.mode == "brute" and args.charset == None):
         parser.print_usage()
-        exit(0)
-
-    if args.mode != "dict" and args.mode != "brute":
-        parser.print_usage()
-        exit(0)
-
-    if args.mode == "brute" and args.charset == None:
-        print("[-] ERROR = please, specify a charset for the bruteforcer!!")
-        exit(0)
+        exit(errno.EINVAL)
 
     zname = args.zname
     dname = args.dname
@@ -62,15 +50,14 @@ def main():
         zdata = open(zname,"rb").read()
     except Exception as e:
         print("[-] ERROR = " + str(e))
-        exit(0)
+        exit(errno.ENOENT)
 
     if mode == "dict":
-        passfile = open(dname, 'rb')
-        for line in passfile.readlines():
+        passfile = open(dname, 'rb').readlines()
+        for line in passfile:
             if line[:2] != bytes("#!","ascii"):
                 password = line.strip()
-                guess = extractfile(zfile, zdata, password)
-                if guess:
+                if extractfile(zfile, zdata, password):
                     print("[+] PASSWORD = " + str(password)[2:-1] +\
                         "\t(cracked in %.5s sec)" % str(time.time()-start))
                     exit(0)
