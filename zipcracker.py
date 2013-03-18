@@ -41,9 +41,7 @@ def dict_mode(zfile, zdata, dictionary):
     #return(''.join([pwd.strip().decode("ascii")
                     #for pwd in passwords if extract_file(zfile, zdata, pwd.strip())]))
 
-def main():
-    start = time()
-
+def parser():
     parser = argparse.ArgumentParser(description = "Zip file cracker",version="1.0")
     parser.add_argument("-f", dest = 'zname',type = str,\
                       help = "specify zip file")
@@ -62,11 +60,15 @@ def main():
         parser.print_usage()
         exit(errno.EINVAL)
 
-    zname = args.zname
-    dname = args.dname
-    mode = args.mode
-    charset = args.charset
+    return args.zname, args.dname, args.mode,args.charset
 
+
+
+def main():
+    start = time()
+
+    zname, dname, mode, charset = parser()
+    pwd = ''
     try:
         zfile = zipfile.ZipFile(zname)
         zdata = open(zname,"rb").read()
@@ -76,12 +78,13 @@ def main():
 
     if mode == "dict":
         pwd = dict_mode(zfile, zdata, dname)
-        if pwd:
-            success(start, pwd)
-            exit(0)
-        print("[-] Password not found")
     elif mode == "brute":
         print("Not implemented yet")
+
+    if pwd:
+        success(start, pwd)
+    else:
+        print("[-] Password not found")
 
 if __name__ == "__main__":
     main()
