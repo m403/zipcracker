@@ -30,23 +30,19 @@ def dict_mode(zfile, zdata, dictionary):
             return pwd.strip().decode("ascii")
 
 def parser():
+    global DEBUG
     parser = argparse.ArgumentParser(description = "Zip file cracker",version="1.0")
-    parser.add_argument("-f", dest = 'zname',type = str,\
-                      help = "specify zip file")
+    parser.add_argument("-f", dest = 'zname',type = str, required = True,\
+                        help = "specify zip file")
     parser.add_argument("-d", dest = 'dname',type = str,\
-                      help = "specify dictionary file")
-    parser.add_argument("-m", dest = "mode", type = str,\
-                      help = "specify the operation mode dict|brute")
+                        help = "specify dictionary file")
+    parser.add_argument("-m", dest = "mode", type = str, required = True,\
+                        choices = ['dict','brute'], help = "specify the operation mode: dict or brute")
     parser.add_argument("-c", dest = "charset", type = str,\
-                      help = "specify the charset used in the bruteforce mode")
+                        help = "specify the charset used in the bruteforce mode")
+    parser.add_argument("--debug", action="store_true", default=False, help = "enable debug mode")
     args = parser.parse_args()
-
-    # BEAUTIFY ME!!!!
-    if ((args.zname == None) or (args.dname == None and args.mode == "dict")) or \
-       (args.mode != "dict" and args.mode != "brute") or \
-       (args.mode == "brute" and args.charset == None):
-        parser.print_usage()
-        exit(errno.EINVAL)
+    DEBUG = args.debug
 
     return args.zname, args.dname, args.mode,args.charset
 
