@@ -8,7 +8,7 @@ from time import time
 
 DEBUG = False
 
-def extract_file(zfile, zdata, password):
+def verify_pwd(zfile, zdata, password):
     dest_dir = "./" + os.path.splitext(zfile.filename)[0]
     zfile.setpassword(password)
     try:
@@ -26,7 +26,7 @@ def success(start_time, pwd):
 def dict_mode(zfile, zdata, dictionary):
     passwords = open(dictionary, 'rb').readlines()
     for pwd in passwords:
-        if extract_file(zfile, zdata, pwd.strip()):
+        if verify_pwd(zfile, zdata, pwd.strip()):
             return pwd.strip().decode("ascii")
 
 def parser():
