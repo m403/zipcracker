@@ -9,7 +9,6 @@ from time import time
 DEBUG = False
 
 def verify_pwd(zfile, zdata, password):
-    dest_dir = "./" + os.path.splitext(zfile.filename)[0]
     zfile.setpassword(password)
     try:
         if zfile.testzip() is None:
