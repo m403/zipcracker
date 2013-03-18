@@ -38,8 +38,6 @@ def dict_mode(zfile, zdata, dictionary):
     for pwd in passwords:
         if extract_file(zfile, zdata, pwd.strip()):
             return pwd.strip().decode("ascii")
-    #return(''.join([pwd.strip().decode("ascii")
-                    #for pwd in passwords if extract_file(zfile, zdata, pwd.strip())]))
 
 def parser():
     parser = argparse.ArgumentParser(description = "Zip file cracker",version="1.0")
@@ -61,8 +59,6 @@ def parser():
         exit(errno.EINVAL)
 
     return args.zname, args.dname, args.mode,args.charset
-
-
 
 def main():
     start = time()
