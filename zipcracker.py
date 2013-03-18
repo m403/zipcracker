@@ -8,7 +8,7 @@ from time import time
 
 DEBUG = False
 
-def verify_pwd(zfile, zdata, password):
+def verify_pwd(zfile, password):
     zfile.setpassword(password)
     try:
         if zfile.testzip() is None:
@@ -22,10 +22,10 @@ def success(start_time, pwd):
     total_time = time() - start_time
     print("[+] PASSWORD = " + pwd + "\t(cracked in %.5s sec)" % str(total_time))
 
-def dict_mode(zfile, zdata, dictionary):
+def dict_mode(zfile, dictionary):
     passwords = open(dictionary, 'rb').readlines()
     for pwd in passwords:
-        if verify_pwd(zfile, zdata, pwd.strip()):
+        if verify_pwd(zfile, pwd.strip()):
             return pwd.strip().decode("ascii")
 
 def parser():
@@ -52,13 +52,12 @@ def main():
     pwd = ''
     try:
         zfile = zipfile.ZipFile(zname)
-        zdata = open(zname,"rb").read()
     except Exception as e:
         print("[-] ERROR = " + str(e))
         exit(errno.ENOENT)
 
     if mode == "dict":
-        pwd = dict_mode(zfile, zdata, dname)
+        pwd = dict_mode(zfile, dname)
     elif mode == "brute":
         print("Not implemented yet")
 
