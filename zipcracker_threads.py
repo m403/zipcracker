@@ -8,8 +8,17 @@ import struct
 from time import time
 
 DEBUG = False
-LOCK = threading.Lock()
+ZIP_LOCK = threading.Lock()
+EXIT_LOCK = threading.Condition()
 START_TIME = time()
+EXIT = False
+
+def setExit():
+    global EXIT
+    EXIT = True
+
+def getExit():
+    return EXIT
 
 class ThreadPwd(threading.Thread):
     def __init__(self, passwords, zfile):
@@ -20,24 +29,30 @@ class ThreadPwd(threading.Thread):
         for line in self.passwords:
             if verify_pwd(self.zfile, line.strip()):
                 success(line.strip().decode("ascii"))
+                # acquire lock and weak up main thread
+                EXIT_LOCK.acquire()
+                setExit()
+                EXIT_LOCK.notify()
+                EXIT_LOCK.release()
 
 def success(pwd):
     total_time = time() - START_TIME
     print("[+] PASSWORD = " + pwd + "\t(cracked in %.5s sec)" % str(total_time))
 
 def verify_pwd(zfile, password):
-    global LOCK
-    LOCK.acquire()
+    global ZIP_LOCK
+    # acquire lock to set pwd and test atomically
+    ZIP_LOCK.acquire()
     zfile.setpassword(password)
     try:
         result = zfile.testzip()
-        LOCK.release()
+        ZIP_LOCK.release()
         if result is None:
             return True
     except Exception as e:
         if DEBUG is True:
             print("[-] ERROR = " + str(e))
-        LOCK.release()
+        ZIP_LOCK.release()
         return False
 
 def dict_mode(zfile, dictionary, n_threads):
@@ -54,6 +69,13 @@ def dict_mode(zfile, dictionary, n_threads):
         t = ThreadPwd(passwords[i:bound], zfile)
         t.start()
         print("(%s) - chunk [%d-%d]" % (t.getName(), i, bound-1))
+    # wait until password is found
+    EXIT_LOCK.acquire()
+    while getExit() is False:
+        EXIT_LOCK.wait()
+    EXIT_LOCK.release()
+    # exit not gracefully
+    os._exit(os.EX_OK)
 
 def parser():
     global DEBUG
