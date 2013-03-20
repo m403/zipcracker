@@ -10,7 +10,7 @@ from time import time
 DEBUG = False
 ZIP_LOCK = threading.Lock()
 EXIT_LOCK = threading.Condition()
-START_TIME = time()
+START_TIME = -1
 EXIT = False
 
 def setExit():
@@ -56,7 +56,9 @@ def verify_pwd(zfile, password):
         return False
 
 def dict_mode(zfile, dictionary, n_threads):
+    global START_TIME
     passwords = open(dictionary, 'rb').readlines()
+    START_TIME = time()
     l = len(passwords)
     step = int(l/n_threads)
     for i in range(0, l, step):
@@ -72,7 +74,9 @@ def dict_mode(zfile, dictionary, n_threads):
     # wait until password is found
     EXIT_LOCK.acquire()
     while getExit() is False:
-        EXIT_LOCK.wait()
+        EXIT_LOCK.wait(10)
+        if threading.activeCount() == 1:
+            break
     EXIT_LOCK.release()
     # exit not gracefully
     os._exit(os.EX_OK)
