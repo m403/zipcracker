@@ -5,9 +5,11 @@
 #include "contrib/minizip/unzip.h"
 
 #define MAX_WORD_LENGTH 50
+#define BUFF_SIZE 2048 * 2
 
 char *readline(FILE *);
 char *dictionary_mode(const char *, const char *);
+int extract(unzFile);
 
 int main(int argc, char *argv[])
 {
@@ -29,9 +31,50 @@ char *dictionary_mode(const char *zipfilename, const char *dict)
         printf("[-] ERROR: Failed to open %s\n", zipfilename);
         return NULL;
     }
-    fp_dict = fopen(dict, "r");
+    /*fp_dict = fopen(dict, "r");*/
+    extract(uf);
 
     return zipfilename;
+}
+
+int extract(unzFile f)
+{
+    int err;
+    void *buffer;
+    uInt buff_size = BUFF_SIZE;
+    
+    buffer = (void*)malloc(buff_size);
+    
+    err = unzOpenCurrentFilePassword(f, "123456");
+    if(err |= UNZ_OK)
+    {
+        printf("[-] Error\n");
+        return -1;
+    }
+    do
+    {
+        err = unzReadCurrentFile(f, buffer, buff_size);
+        if(err < 0)
+        {
+            printf("[-] Error");
+            return -1;
+        }
+    }while(err != 0);
+    printf("%s", buffer);
+    
+    err = unzCloseCurrentFile(f);
+    if(err != UNZ_OK)
+    {
+        if(err == UNZ_CRCERROR)
+        {
+            printf("[-] Bad CRC\n");
+        }
+        else
+            printf("[-] Error\n");
+        return -1;
+    }
+
+    return 0;
 }
 
 char *readline(FILE *fp) 
