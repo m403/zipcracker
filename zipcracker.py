@@ -23,10 +23,13 @@ def success(start_time, pwd):
     print("[+] PASSWORD = " + pwd + "\t(cracked in %.5s sec)" % str(total_time))
 
 def dict_mode(zfile, dictionary):
-    passwords = open(dictionary, 'rb').readlines()
+    f = open(dictionary, 'rb')
+    passwords = f.readlines()
     for pwd in passwords:
         if verify_pwd(zfile, pwd.strip()):
+            f.close()
             return pwd.strip().decode("ascii")
+    f.close()
 
 def parser():
     global DEBUG
@@ -65,6 +68,7 @@ def main():
         success(start, pwd)
     else:
         print("[-] Password not found")
+    zfile.close()
 
 if __name__ == "__main__":
     main()
