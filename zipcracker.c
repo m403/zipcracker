@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
     const char *dictionary = argv[2];
     
     if(dictionary_mode(zipfilename,dictionary))
-        printf("[-] Error 1\n");
+        printf("[-] Error\n");
     return 0;
 }
 
@@ -61,7 +61,8 @@ int extract(unzFile f, char *password)
     err = unzOpenCurrentFilePassword(f, password);
     if(err != UNZ_OK)
     {
-        printf("[-] Error 2\n");
+        printf("[-] Error %d\n", err);
+        free(buffer);
         return -1;
     }
     do
@@ -69,7 +70,8 @@ int extract(unzFile f, char *password)
         err = unzReadCurrentFile(f, buffer, buff_size);
         if(err < 0)
         {
-            printf("[-] Error 3");
+            printf("[-] Error %d\n", err);
+            free(buffer);
             return -1;
         }
     }while(err != 0);
@@ -83,8 +85,10 @@ int extract(unzFile f, char *password)
         /*}*/
         /*else*/
             /*printf("[-] Error\n");*/
+        free(buffer);
         return -1;
     }
+    free(buffer);
     return UNZ_OK;
 }
 
