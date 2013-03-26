@@ -8,7 +8,7 @@
 #define BUFF_SIZE 2048 * 2
 
 char *readline(FILE *);
-char *dictionary_mode(const char *, const char *);
+int dictionary_mode(const char *, const char *);
 int extract(unzFile f, char *password);
 
 int main(int argc, char *argv[])
@@ -16,12 +16,12 @@ int main(int argc, char *argv[])
     const char *zipfilename = argv[1];
     const char *dictionary = argv[2];
     
-    if(!dictionary_mode(zipfilename,dictionary))
-        printf("[-] Error\n");
+    if(dictionary_mode(zipfilename,dictionary))
+        printf("[-] Error 1\n");
     return 0;
 }
 
-char *dictionary_mode(const char *zipfilename, const char *dict)
+int dictionary_mode(const char *zipfilename, const char *dict)
 {
     FILE *fp_dict;
     unzFile uf;
@@ -33,7 +33,7 @@ char *dictionary_mode(const char *zipfilename, const char *dict)
     if(uf == NULL)
     {
         printf("[-] ERROR: Failed to open %s\n", zipfilename);
-        return NULL;
+        return -1;
     }
 
     fp_dict = fopen(dict, "r");
@@ -47,7 +47,6 @@ char *dictionary_mode(const char *zipfilename, const char *dict)
             return 0;
         }
     }while(password != NULL);
-
     return -1;
 }
 
@@ -62,7 +61,7 @@ int extract(unzFile f, char *password)
     err = unzOpenCurrentFilePassword(f, password);
     if(err |= UNZ_OK)
     {
-        printf("[-] Error\n");
+        printf("[-] Error 2\n");
         return -1;
     }
     do
@@ -70,7 +69,7 @@ int extract(unzFile f, char *password)
         err = unzReadCurrentFile(f, buffer, buff_size);
         if(err < 0)
         {
-            printf("[-] Error");
+            printf("[-] Error 3");
             return -1;
         }
     }while(err != 0);
