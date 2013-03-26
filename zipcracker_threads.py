@@ -57,7 +57,8 @@ def verify_pwd(zfile, password):
 
 def dict_mode(zfile, dictionary, n_threads):
     global START_TIME
-    passwords = open(dictionary, 'rb').readlines()
+    f = open(dictionary, 'rb')
+    passwords = f.readlines()
     START_TIME = time()
     l = len(passwords)
     step = int(l/n_threads)
@@ -78,6 +79,7 @@ def dict_mode(zfile, dictionary, n_threads):
         if threading.activeCount() == 1:
             break
     EXIT_LOCK.release()
+    f.close()
     # exit not gracefully
     os._exit(os.EX_OK)
 
@@ -111,6 +113,7 @@ def main():
         dict_mode(zfile, dname, n_threads)
     elif mode == "brute":
         print("Not implemented yet")
+    zfile.close()
 
 if __name__ == "__main__":
     main()
