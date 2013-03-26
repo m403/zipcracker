@@ -59,7 +59,7 @@ int extract(unzFile f, char *password)
     buffer = (void*)malloc(buff_size);
     
     err = unzOpenCurrentFilePassword(f, password);
-    if(err |= UNZ_OK)
+    if(err != UNZ_OK)
     {
         printf("[-] Error 2\n");
         return -1;
