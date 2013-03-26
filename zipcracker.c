@@ -9,14 +9,15 @@
 
 char *readline(FILE *);
 char *dictionary_mode(const char *, const char *);
-int extract(unzFile);
+int extract(unzFile f, char *password);
 
 int main(int argc, char *argv[])
 {
     const char *zipfilename = argv[1];
     const char *dictionary = argv[2];
     
-    dictionary_mode(zipfilename,dictionary);
+    if(!dictionary_mode(zipfilename,dictionary))
+        printf("[-] Error\n");
     return 0;
 }
 
@@ -24,6 +25,9 @@ char *dictionary_mode(const char *zipfilename, const char *dict)
 {
     FILE *fp_dict;
     unzFile uf;
+    char *password; 
+
+    password = (char*)calloc(MAX_WORD_LENGTH, sizeof(password));
 
     uf = unzOpen64(zipfilename);
     if(uf == NULL)
@@ -31,13 +35,23 @@ char *dictionary_mode(const char *zipfilename, const char *dict)
         printf("[-] ERROR: Failed to open %s\n", zipfilename);
         return NULL;
     }
-    /*fp_dict = fopen(dict, "r");*/
-    extract(uf);
 
-    return zipfilename;
+    fp_dict = fopen(dict, "r");
+
+    do
+    {
+        password = readline(fp_dict); 
+        if(extract(uf, password) == UNZ_OK)
+        {
+            printf("[+] PASSWORD FOUND: %s\n", password);
+            return 0;
+        }
+    }while(password != NULL);
+
+    return -1;
 }
 
-int extract(unzFile f)
+int extract(unzFile f, char *password)
 {
     int err;
     void *buffer;
@@ -45,7 +59,7 @@ int extract(unzFile f)
     
     buffer = (void*)malloc(buff_size);
     
-    err = unzOpenCurrentFilePassword(f, "123456");
+    err = unzOpenCurrentFilePassword(f, password);
     if(err |= UNZ_OK)
     {
         printf("[-] Error\n");
@@ -60,21 +74,19 @@ int extract(unzFile f)
             return -1;
         }
     }while(err != 0);
-    printf("%s", buffer);
     
     err = unzCloseCurrentFile(f);
     if(err != UNZ_OK)
     {
-        if(err == UNZ_CRCERROR)
-        {
-            printf("[-] Bad CRC\n");
-        }
-        else
-            printf("[-] Error\n");
+        /*if(err == UNZ_CRCERROR)*/
+        /*{*/
+            /*printf("[-] Bad CRC\n");*/
+        /*}*/
+        /*else*/
+            /*printf("[-] Error\n");*/
         return -1;
     }
-
-    return 0;
+    return UNZ_OK;
 }
 
 char *readline(FILE *fp) 
