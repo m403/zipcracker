@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "contrib/minizip/unzip.h"
 
@@ -15,9 +16,19 @@ int main(int argc, char *argv[])
 {
     const char *zipfilename = argv[1];
     const char *dictionary = argv[2];
+    time_t start_t, end_t, diff_t;
+    int n;
     
-    if(dictionary_mode(zipfilename,dictionary))
+    start_t = time(NULL);
+
+    n = dictionary_mode(zipfilename,dictionary);
+    if(n == -1)
         printf("[-] Error 1\n");
+    end_t = time(NULL);
+
+    diff_t = difftime(end_t, start_t); 
+    printf("Cracked in %d secs\npassword per second: %ld\n", diff_t, n/diff_t);
+
     return 0;
 }
 
@@ -25,7 +36,8 @@ int dictionary_mode(const char *zipfilename, const char *dict)
 {
     FILE *fp_dict;
     unzFile uf;
-    char *password; 
+    char *password;
+    int n = 0;
 
     password = (char*)calloc(MAX_WORD_LENGTH, sizeof(password));
 
@@ -41,12 +53,17 @@ int dictionary_mode(const char *zipfilename, const char *dict)
     do
     {
         password = readline(fp_dict); 
+        n += 1;
         if(extract(uf, password) == UNZ_OK)
         {
-            printf("[+] PASSWORD FOUND: %s\n", password);
-            return 0;
+            printf("[+] PASSWORD FOUND: %s\n", password);        
+            free(password);
+            return n;
         }
     }while(password != NULL);
+
+    free(password);
+
     return -1;
 }
 
@@ -56,24 +73,27 @@ int extract(unzFile f, char *password)
     void *buffer;
     uInt buff_size = BUFF_SIZE;
     
-    buffer = (void*)malloc(buff_size);
-    
     err = unzOpenCurrentFilePassword(f, password);
-    if(err != UNZ_OK)
+    if(err |= UNZ_OK)
     {
         printf("[-] Error 2\n");
         return -1;
     }
+
+    buffer = (void*)malloc(buff_size);
     do
     {
         err = unzReadCurrentFile(f, buffer, buff_size);
         if(err < 0)
         {
             printf("[-] Error 3");
+            free(buffer);
             return -1;
         }
     }while(err != 0);
-    
+
+    free(buffer);
+
     err = unzCloseCurrentFile(f);
     if(err != UNZ_OK)
     {
