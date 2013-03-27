@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
     end_t = time(NULL);
 
     diff_t = difftime(end_t, start_t); 
-    printf("Cracked in %d secs\npassword per second: %d\n", diff_t, n/diff_t);
+    printf("Cracked in %d secs\npassword per second: %ld\n", diff_t, n/diff_t);
 
     return 0;
 }
