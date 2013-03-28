@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 
 #include "contrib/minizip/unzip.h"
 
@@ -10,24 +9,17 @@
 
 char *readline(FILE *);
 int dictionary_mode(const char *, const char *);
-int extract(unzFile f, char *password);
+int extract(unzFile, char *);
 
 int main(int argc, char *argv[])
 {
     const char *zipfilename = argv[1];
     const char *dictionary = argv[2];
-    time_t start_t, end_t, diff_t;
     int n;
     
-    start_t = time(NULL);
-
     n = dictionary_mode(zipfilename,dictionary);
     if(n == -1)
         printf("[-] Error 1\n");
-    end_t = time(NULL);
-
-    diff_t = difftime(end_t, start_t); 
-    printf("Cracked in %d secs\npassword per second: %ld\n", diff_t, n/diff_t);
 
     return 0;
 }
@@ -74,10 +66,10 @@ int extract(unzFile f, char *password)
     uInt buff_size = BUFF_SIZE;
     
     err = unzOpenCurrentFilePassword(f, password);
-    if(err |= UNZ_OK)
+    if(err != UNZ_OK)
     {
         printf("[-] Error 2\n");
-        return -1;
+        return err;
     }
 
     buffer = (void*)malloc(buff_size);
@@ -86,9 +78,9 @@ int extract(unzFile f, char *password)
         err = unzReadCurrentFile(f, buffer, buff_size);
         if(err < 0)
         {
-            printf("[-] Error 3");
+            printf("[-] Error %d\n", err);
             free(buffer);
-            return -1;
+            return err;
         }
     }while(err != 0);
 
@@ -97,13 +89,7 @@ int extract(unzFile f, char *password)
     err = unzCloseCurrentFile(f);
     if(err != UNZ_OK)
     {
-        /*if(err == UNZ_CRCERROR)*/
-        /*{*/
-            /*printf("[-] Bad CRC\n");*/
-        /*}*/
-        /*else*/
-            /*printf("[-] Error\n");*/
-        return -1;
+       return err;
     }
     return UNZ_OK;
 }
