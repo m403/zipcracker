@@ -11,7 +11,7 @@ ZIPC_OBJS_64 = zipcracker.o $(TARGET_FOLDER_64)unzip.o $(TARGET_FOLDER_64)ioapi.
 
 # modificare per 32
 .c.o:
-	$(CC) -c $(CFLAGS_64) $*.c -o $@ $(TARGET_FOLDER_64)
+	$(CC) -c $(CFLAGS_32) $*.c -o $@ $(TARGET_FOLDER_32)
 
 all: zipcracker32 zipcracker64
 
