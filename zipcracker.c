@@ -15,11 +15,9 @@ int main(int argc, char *argv[])
 {
     const char *zipfilename = argv[1];
     const char *dictionary = argv[2];
-    int n;
     
-    n = dictionary_mode(zipfilename,dictionary);
-    if(n == -1)
-        printf("[-] Error 1\n");
+    if(dictionary_mode(zipfilename,dictionary) == -1)
+        printf("[-] Error\n");
 
     return 0;
 }
@@ -29,7 +27,6 @@ int dictionary_mode(const char *zipfilename, const char *dict)
     FILE *fp_dict;
     unzFile uf;
     char *password;
-    int n = 0;
 
     password = (char*)calloc(MAX_WORD_LENGTH, sizeof(password));
 
@@ -45,12 +42,11 @@ int dictionary_mode(const char *zipfilename, const char *dict)
     do
     {
         password = readline(fp_dict); 
-        n += 1;
         if(extract(uf, password) == UNZ_OK)
         {
             printf("[+] PASSWORD FOUND: %s\n", password);        
             free(password);
-            return n;
+            return 0;
         }
     }while(password != NULL);
 
@@ -68,7 +64,7 @@ int extract(unzFile f, char *password)
     err = unzOpenCurrentFilePassword(f, password);
     if(err != UNZ_OK)
     {
-        printf("[-] Error 2\n");
+        printf("[-] Error %d\n", err);
         return err;
     }
 
@@ -88,9 +84,8 @@ int extract(unzFile f, char *password)
 
     err = unzCloseCurrentFile(f);
     if(err != UNZ_OK)
-    {
-       return err;
-    }
+        return err;
+
     return UNZ_OK;
 }
 
