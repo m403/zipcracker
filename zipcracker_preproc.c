@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+#include <time.h>
 #include <fcntl.h>
 
 #include "contrib/minizip/unzip.h"
@@ -14,7 +15,10 @@
 #define MAX(n1,n2) n2>n1?n2:n1
 
 static const char *zip, *dict;
-static int nchunks = 10;
+static int nchunks = 20;
+pthread_mutex_t mutex_npwd = PTHREAD_MUTEX_INITIALIZER;
+uLong npwd = 0;
+static time_t start;
 
 int main(int argc, char *argv[])
 {
@@ -32,6 +36,7 @@ int main(int argc, char *argv[])
     th_a = preproc(dict, n, nchunks);
     printf("Preprocessing phase finished\n");
 
+    start = time(NULL);
     for(i = 0; i < n; i++)
     {
         pthread_create(&threads[i], NULL, dictionary_mode, (void *)&th_a[i]);
@@ -89,11 +94,17 @@ void *dictionary_mode(void *th_a)
 
         while((password = strtok_r(ptr_start, "\r\n", &ptr_end)))
         {
+            pthread_mutex_lock(&mutex_npwd);
+            npwd += 1;
+            pthread_mutex_unlock(&mutex_npwd);
+
             /*printf("%s\n",password);*/
             if(extract(uf, password) == UNZ_OK)
             {
                 printf("[+] PASSWORD FOUND: %s\n", password);
                 /*printf("\t%d start:%lu\tend:%lu\n",data->t_id, data->chunks[i].start, data->chunks[i].end);*/
+                time_t end = time(NULL);
+                printf("CRACKED IN %d sec\t(password per second:%lu)\n", end - start, npwd/(end-start));
                 exit(0);
                 /*pthread_exit(&ok);*/
             }

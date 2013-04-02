@@ -6,7 +6,7 @@
 
 #define DEBUG 0
 #define NUM_THREADS 10
-#define CHUNK 10000
+#define CHUNK 50000
 #define MAX_WORD_LENGTH 50
 #define NOT_FOUND -3
 #define FOUND -2
