@@ -14,7 +14,7 @@
 #define MAX(n1,n2) n2>n1?n2:n1
 
 static const char *zip, *dict;
-static int nchunks = 100;
+static int nchunks = 10;
 
 int main(int argc, char *argv[])
 {
