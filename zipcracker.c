@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "contrib/minizip/unzip.h"
 
@@ -10,14 +11,21 @@
 char *readline(FILE *);
 int dictionary_mode(const char *, const char *);
 int extract(unzFile, char *);
+unsigned long npwd;
 
 int main(int argc, char *argv[])
 {
     const char *zipfilename = argv[1];
     const char *dictionary = argv[2];
+    time_t start, end;
+    npwd = 0;
+    start = time(NULL);
     
     if(dictionary_mode(zipfilename,dictionary) == -1)
         printf("[-] Error\n");
+
+    end = time(NULL);
+    printf("CRACKED IN %d sec\t(password per sec:%lu)\n", end-start, npwd/(end-start));
 
     return 0;
 }
@@ -41,7 +49,8 @@ int dictionary_mode(const char *zipfilename, const char *dict)
 
     do
     {
-        password = readline(fp_dict); 
+        password = readline(fp_dict);
+        npwd += 1;
         if(extract(uf, password) == UNZ_OK)
         {
             printf("[+] PASSWORD FOUND: %s\n", password);        
