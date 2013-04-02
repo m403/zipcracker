@@ -9,7 +9,7 @@ ZIPCTHREADS_OBJS_32 = zipcracker_threads.o $(TARGET_FOLDER_32)unzip.o $(TARGET_F
 ZIPC_OBJS_32_t=zipcracker_preproc.o preproc.o $(TARGET_FOLDER_32)unzip.o $(TARGET_FOLDER_32)ioapi.o zlib-1.2.7_32/libz.a
 
 .c.o:
-	$(CC) -c $(CFLAGS_32_t) $*.c -o $@ $(TARGET_FOLDER_32)
+	$(CC) -c $(CFLAGS_32_t) $*.c -o $@
 
 all: zipcracker_threads zipcracker_preproc
 
