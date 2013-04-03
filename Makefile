@@ -21,4 +21,4 @@ zipcracker32:  $(ZIPC_OBJS_32)
 zipcracker64:  $(ZIPC_OBJS_64)
 	$(CC) $(CFLAGS_64) -o $@ $(ZIPC_OBJS_64)
 clean:
-	/bin/rm -f *.o *~ zipcracker
+	/bin/rm -f *.o *~ zipcracker32 zipcracker64
