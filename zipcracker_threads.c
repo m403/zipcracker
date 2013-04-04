@@ -6,9 +6,10 @@
 #include "contrib/minizip/unzip.h"
 
 #define DEBUG 0
-#define NUM_THREADS 12
-#define CHUNK 300000
+#define NUM_THREADS 3
+#define CHUNK 5000000
 #define MAX_WORD_LENGTH 50
+#define MIN(n1,n2) n1<n2?n1:n2
 
 char *zipfilename;
 char *dictname;
@@ -66,30 +67,40 @@ void *worker(void *index)
         printf("Worker-thread() %d: Started\n", (int)index);
 
     FILE *fp_dict = fopen(dictname, "r");
-    int pos;
-    char *buf = (char *)calloc(CHUNK, sizeof(char)), *ptr_start, *ptr_end;
-    char *password;
+    int initial_pos, filesize, chunk;
+    char *buf, *ptr_start, *ptr_end, *password;
     unzFile uf = unzOpen64(zipfilename);
     if(uf == NULL)
     {
         printf("[-] ERROR: Failed to open %s\n", zipfilename);
         exit(0);
     }
+    fseek(fp_dict, 0, SEEK_SET);
+    fseek(fp_dict, 0, SEEK_END);
+    filesize = ftell(fp_dict);
 
     while (1) {
+        /* start of critical section */
         pthread_mutex_lock(&position_mutex);
-        pos = position;
-        position += CHUNK;
+        initial_pos = position;
+        fseek(fp_dict, initial_pos, 0);
+        fseek(fp_dict, MIN(position+CHUNK, filesize), 0);
+        while(fgetc(fp_dict) != '\n');
+        chunk = ftell(fp_dict);
+        position += chunk;   
         pthread_mutex_unlock(&position_mutex);
+        /* end of critical section */
 
-        fseek(fp_dict, pos, 0);
-        fread(buf, 1, CHUNK, fp_dict);
+        buf = (char *)calloc(chunk, sizeof(char));
+        fseek(fp_dict, initial_pos, 0);
+        fread(buf, 1, chunk, fp_dict);
         ptr_start = buf;
         /* read passwords until end of CHUNK */
         while((password = strtok_r(ptr_start, "\r\n", &ptr_end)))
         {
             if (DEBUG)
                 printf("%s, %d\n", password, (int)index);
+
             pthread_mutex_lock(&nump_mutex);
             num_pwd += 1;
             pthread_mutex_unlock(&nump_mutex);
@@ -104,6 +115,7 @@ void *worker(void *index)
             }
             ptr_start = ptr_end;
         }
+        free(buf);
     }
 }
 
