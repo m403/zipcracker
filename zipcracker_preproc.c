@@ -104,7 +104,7 @@ void *dictionary_mode(void *th_a)
                 printf("[+] PASSWORD FOUND: %s\n", password);
                 /*printf("\t%d start:%lu\tend:%lu\n",data->t_id, data->chunks[i].start, data->chunks[i].end);*/
                 time_t end = time(NULL);
-                printf("CRACKED IN %d sec\t(password per second:%lu)\n", end - start, npwd/(end-start));
+                printf("CRACKED IN %lu sec\t(password per second:%lu)\n", end - start, npwd/(end-start));
                 exit(0);
                 /*pthread_exit(&ok);*/
             }

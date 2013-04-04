@@ -6,11 +6,10 @@
 #include "contrib/minizip/unzip.h"
 
 #define DEBUG 0
-#define NUM_THREADS 50
-#define CHUNK 50000
+#define NUM_THREADS 12
+#define CHUNK 300000
 #define MAX_WORD_LENGTH 50
 
-unzFile uf;
 char *zipfilename;
 char *dictname;
 unsigned long num_pwd = 0;
@@ -24,7 +23,6 @@ pthread_mutex_t position_mutex;
 
 /* prototypes */
 void *worker(void *);
-char *readline(char *);
 int extract(unzFile, char *);
 
 int main (int argc, char *argv[])
@@ -36,13 +34,7 @@ int main (int argc, char *argv[])
     start = time(NULL);
     zipfilename = argv[1];
     dictname = argv[2];
-    uf = unzOpen64(zipfilename);
-    if(uf == NULL)
-    {
-        printf("[-] ERROR: Failed to open %s\n", zipfilename);
-        pthread_exit(NULL);
-    }
-
+    
     /* Initialize mutex objects */
     pthread_mutex_init(&nump_mutex, NULL);
     pthread_mutex_init(&position_mutex, NULL);
@@ -58,7 +50,6 @@ int main (int argc, char *argv[])
         pthread_join(workers[i], NULL);
 
     /* Clean up and exit */
-    unzCloseCurrentFile(uf);
     pthread_attr_destroy(&attr);
     pthread_mutex_destroy(&nump_mutex);
     pthread_mutex_destroy(&position_mutex);
@@ -76,46 +67,44 @@ void *worker(void *index)
 
     FILE *fp_dict = fopen(dictname, "r");
     int pos;
-    char *buf = (char *)calloc(CHUNK, sizeof(char)), *tmp;
-    char *password = (char*)calloc(MAX_WORD_LENGTH, sizeof(password));
+    char *buf = (char *)calloc(CHUNK, sizeof(char)), *ptr_start, *ptr_end;
+    char *password;
+    unzFile uf = unzOpen64(zipfilename);
+    if(uf == NULL)
+    {
+        printf("[-] ERROR: Failed to open %s\n", zipfilename);
+        exit(0);
+    }
 
     while (1) {
         pthread_mutex_lock(&position_mutex);
         pos = position;
         position += CHUNK;
         pthread_mutex_unlock(&position_mutex);
+
         fseek(fp_dict, pos, 0);
         fread(buf, 1, CHUNK, fp_dict);
-        tmp = buf;
+        ptr_start = buf;
         /* read passwords until end of CHUNK */
-        while((password = readline(tmp)) && (int)tmp < (int)buf+CHUNK)
+        while((password = strtok_r(ptr_start, "\r\n", &ptr_end)))
         {
             if (DEBUG)
                 printf("%s, %d\n", password, (int)index);
             pthread_mutex_lock(&nump_mutex);
             num_pwd += 1;
+            pthread_mutex_unlock(&nump_mutex);
             if(extract(uf, password) == UNZ_OK)
             {
                 printf("[+] PASSWORD FOUND: %s\n", password);
                 free(buf);
-                free(password);
                 end = time(NULL);
-                printf("Tempo: %lu\n", end-start);
-                printf("Password/sec: %lu\n", num_pwd/(end-start));
+                printf("CRACKED IN %lu sec\t(password per second: %lu)\n", end - start, num_pwd/(end-start));
                 fclose(fp_dict);
                 exit(0);
             }
-            pthread_mutex_unlock(&nump_mutex);
-            tmp += strlen(password)+1;
+            ptr_start = ptr_end;
         }
     }
-}
-
-char *readline(char *string) 
-{
-    char *pwd = calloc(MAX_WORD_LENGTH, sizeof(char));
-    sscanf(string, "%s", pwd);
-    return pwd;
 }
 
 int extract(unzFile f, char *password)
