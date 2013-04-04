@@ -6,7 +6,7 @@
 #include <time.h>
 
 #define MAX_WORD_LENGTH 50
-#define BUFFERSIZE(fz) fz/10
+#define BUFFERSIZE(fz) fz/1
 
 /*#define DEBUG*/
 
@@ -14,8 +14,8 @@
 #define ERR 1
 
 char *dictionary_mode(struct zip *, struct zip_stat *, char *);
-int extract(struct zip *, struct zip_stat *, char *);
-char *readline(FILE *); 
+static int extract(struct zip *, struct zip_stat *, char *);
+static char *readline(FILE *); 
 
 static unsigned long npwd = 0;
 
@@ -83,7 +83,10 @@ int main(int argc, char *argv[])
     errno = zip_close(z);
 
     if(errno == OK && pwd != NULL)
+    {
         printf("[+] Password found: %s\n", pwd);
+        free(pwd);
+    }
 
     end = time(NULL);
     printf("TIME: %lu\t(password per second: %lu)\n", end-start, npwd/(end-start));
@@ -108,6 +111,7 @@ char *dictionary_mode(struct zip *z, struct zip_stat *zs, char *dict_fn)
             flag = 1;
             break; 
         }
+        free(pwd);
     }
 
     fclose(f);
@@ -138,6 +142,11 @@ int extract(struct zip *z, struct zip_stat *zs, char *pwd)
     do
     {
         buf = (char *)calloc(bufsize, sizeof(char));
+        if(buf == NULL)
+        {
+            printf("[-] Error: calloc fail\n");
+            exit(ERR);
+        }
         errno = zip_fread(zf, buf, bufsize);
         if(errno == -1)
         {
@@ -170,8 +179,15 @@ int extract(struct zip *z, struct zip_stat *zs, char *pwd)
 
 char *readline(FILE *fp) 
 {
-    char *str = calloc(MAX_WORD_LENGTH, sizeof(char));
+    char *str;
     int str_leng, i;
+
+    str = (char *)calloc(MAX_WORD_LENGTH, sizeof(char));
+    if(str == NULL)
+    {
+        printf("[-] Error calloc fail\n");
+        exit(ERR);
+    }
 
     if(!fgets(str, MAX_WORD_LENGTH, fp))
     {
