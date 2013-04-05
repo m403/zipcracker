@@ -27,13 +27,13 @@ CFLAGS=-O3  -D_LARGEFILE64_SOURCE=1 -DHAVE_HIDDEN
 SFLAGS=-O3  -fPIC -D_LARGEFILE64_SOURCE=1 -DHAVE_HIDDEN
 LDFLAGS= 
 TEST_LDFLAGS=-L. libz.a
-LDSHARED=gcc
+LDSHARED=gcc -shared -Wl,-soname,libz.so.1,--version-script,zlib.map
 CPP=gcc -E
 
 STATICLIB=libz.a
-SHAREDLIB=
-SHAREDLIBV=
-SHAREDLIBM=
+SHAREDLIB=libz.so
+SHAREDLIBV=libz.so.1.2.7
+SHAREDLIBM=libz.so.1
 LIBS=$(STATICLIB) $(SHAREDLIBV)
 
 AR=ar
@@ -70,7 +70,7 @@ OBJS = $(OBJC) $(OBJA)
 
 PIC_OBJS = $(PIC_OBJC) $(PIC_OBJA)
 
-all: static all64
+all: static shared all64
 
 static: example$(EXE) minigzip$(EXE)
 
@@ -80,7 +80,7 @@ all64: example64$(EXE) minigzip64$(EXE)
 
 check: test
 
-test: all teststatic test64
+test: all teststatic testshared test64
 
 teststatic: static
 	@TMPST=`mktemp fooXXXXXX`; \

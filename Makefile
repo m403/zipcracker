@@ -4,8 +4,8 @@ CFLAGS_LIBZIP=-Wall -O2 -march=native
 
 TARGET_FOLDER_32=zlib-1.2.7_32/contrib/minizip/
 
-ZIPC_OBJS_32 = zipcracker.o $(TARGET_FOLDER_32)unzip.o $(TARGET_FOLDER_32)ioapi.o zlib-1.2.7_32/libz.a
-ZIPC_OBJS_ULTIMATE = zipcracker_ultimate.o $(TARGET_FOLDER_32)unzip.o $(TARGET_FOLDER_32)ioapi.o zlib-1.2.7_32/libz.a
+ZIPC_OBJS_32 = zipcracker.o $(TARGET_FOLDER_32)unzip.o $(TARGET_FOLDER_32)ioapi.o zlib-1.2.7_32/libz.so
+ZIPC_OBJS_ULTIMATE = zipcracker_ultimate.o $(TARGET_FOLDER_32)unzip.o $(TARGET_FOLDER_32)ioapi.o zlib-1.2.7_32/libz.so
 
 ZIPC_OBJS_LIBZIP = zipcracker_libzip.o /usr/lib/libzip.so
 
