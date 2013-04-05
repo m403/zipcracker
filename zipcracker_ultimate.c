@@ -40,6 +40,7 @@ int main(int argc, char *argv[])
     pwd = dict_mode(zipfile, dict);
     if(pwd)
         printf("[+] PASSWORD FOUND: %s\n", pwd);
+    free(pwd);
    
     errno = unzClose(zipfile);
     if(errno != UNZ_OK)
@@ -162,7 +163,7 @@ int verify_pwd(unzFile zipfile, unz_file_info64 *file_info, char *pwd)
         #endif
     }while(errno);    
    
-   free(buffer);
+    free(buffer);
 
     errno = unzCloseCurrentFile(zipfile);
     if(errno != UNZ_OK)
