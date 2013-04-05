@@ -153,6 +153,8 @@ int verify_pwd(unzFile zipfile, unz_file_info64 *file_info, char *pwd)
                 #ifdef DEBUG
                 printErr("uncompress error in unzReadCurrentFile");
                 #endif
+
+                free(buffer);
                 return 1;
             }
         }
