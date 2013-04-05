@@ -84,7 +84,7 @@ void *worker(void *index)
         pthread_mutex_lock(&position_mutex);
         initial_pos = position;
         fseek(fp_dict, initial_pos, 0);
-        fseek(fp_dict, MIN(position+CHUNK, filesize), 0);
+        fseek(fp_dict, MIN(position+CHUNK, filesize-1), 0);
         while(fgetc(fp_dict) != '\n');
         chunk = ftell(fp_dict);
         position += chunk;   
@@ -93,7 +93,7 @@ void *worker(void *index)
 
         buf = (char *)calloc(chunk, sizeof(char));
         fseek(fp_dict, initial_pos, 0);
-        fread(buf, 1, chunk, fp_dict);
+        chunk = fread(buf, 1, chunk, fp_dict);
         ptr_start = buf;
         /* read passwords until end of CHUNK */
         while((password = strtok_r(ptr_start, "\r\n", &ptr_end)))
