@@ -6,7 +6,7 @@
 #include <time.h>
 
 #define MAX_WORD_LENGTH 50
-#define BUFFERSIZE(fz) fz/1
+#define BUFFERSIZE 8192
 
 /*#define DEBUG*/
 
@@ -122,8 +122,7 @@ char *dictionary_mode(struct zip *z, struct zip_stat *zs, char *dict_fn)
 int extract(struct zip *z, struct zip_stat *zs, char *pwd)
 {
     struct zip_file *zf;
-    unsigned long bufsize;
-    char *buf;
+    char buf[BUFFERSIZE];
     uInt extr_crc;
     int errno;
 
@@ -137,31 +136,9 @@ int extract(struct zip *z, struct zip_stat *zs, char *pwd)
         return ERR;
     }
 
-    bufsize = BUFFERSIZE(zs->size);
     extr_crc = crc32(0L, Z_NULL, 0);
-    do
-    {
-        buf = (char *)calloc(bufsize, sizeof(char));
-        if(buf == NULL)
-        {
-            printf("[-] Error: calloc fail\n");
-            exit(ERR);
-        }
-        errno = zip_fread(zf, buf, bufsize);
-        if(errno == -1)
-        {
-            #ifdef  DEBUG
-            printf("[-] Error: zip_fread fail\n");
-            #endif
-
-            free(buf);
-            break;
-        }
-        if(errno != 0)
-            extr_crc = crc32(extr_crc, (const Byte *)buf, bufsize);
-
-        free(buf);
-    }while(errno != 0);
+    while((errno=zip_fread(zf, buf, sizeof(buf))) > 0)
+        extr_crc = crc32(extr_crc, (const Byte *)buf, (unsigned int)errno);
 
     if(extr_crc != zs->crc)
     {

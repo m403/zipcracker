@@ -6,7 +6,7 @@
 #include "contrib/minizip/unzip.h"
 
 #define MAX_WORD_LENGTH 50
-#define BUFF_SIZE 2048 * 2
+#define BUFF_SIZE 2
 
 char *readline(FILE *);
 int dictionary_mode(const char *, const char *);
