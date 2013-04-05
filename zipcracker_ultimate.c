@@ -55,13 +55,15 @@ char *dict_mode(unzFile zipfile, char *d)
 {
     FILE *f;
     char *pwd;
-    char *pwd_found;
     int errno;
     unz_file_info64 file_info;
 
-    unzGetCurrentFileInfo64(zipfile, &file_info, NULL, 0, NULL, 0, NULL, 0);
-
-    pwd_found = NULL;
+    errno = unzGetCurrentFileInfo64(zipfile, &file_info, NULL, 0, NULL, 0, NULL, 0);
+    if(errno != UNZ_OK)
+    {
+        printErr("unzGetCurrentFileInfo64(() in dict_mode");
+        exit(1);
+    }
 
     f = fopen(d, "r");
     #ifdef PARANOID
@@ -84,8 +86,6 @@ char *dict_mode(unzFile zipfile, char *d)
             #ifdef DEBUG
             printf("FOUND\n");
             #endif
-            pwd_found = (char*)calloc(strlen(pwd), sizeof(char));
-            memcpy(pwd_found, pwd, strlen(pwd));
             break;
         }
         free(pwd);
@@ -108,7 +108,7 @@ char *dict_mode(unzFile zipfile, char *d)
     }
     #endif
 
-    return pwd_found ? pwd_found : NULL;
+    return pwd;
 }
 
 int verify_pwd(unzFile zipfile, unz_file_info64 *file_info, char *pwd)
