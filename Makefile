@@ -21,9 +21,6 @@ zipcracker32:  $(ZIPC_OBJS_32)
 zipcracker_ultimate:  $(ZIPC_OBJS_ULTIMATE)
 	$(CC) $(CFLAGS_32) -o $@ $(ZIPC_OBJS_ULTIMATE)
 
-zipcracker64:  $(ZIPC_OBJS_64)
-	$(CC) $(CFLAGS_64) -o $@ $(ZIPC_OBJS_64)
-
 zipcracker_libzip:  $(ZIPC_OBJS_LIBZIP)
 	$(CC) $(CFLAGS_LIBZIP) -o $@ $(ZIPC_OBJS_LIBZIP)
 clean:
