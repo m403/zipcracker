@@ -8,6 +8,8 @@ from time import time
 
 DEBUG = False
 
+npasswd = 0;
+
 def verify_pwd(zfile, password):
     zfile.setpassword(password)
     try:
@@ -20,12 +22,14 @@ def verify_pwd(zfile, password):
 
 def success(start_time, pwd):
     total_time = time() - start_time
-    print("[+] PASSWORD = " + pwd + "\t(cracked in %.5s sec)" % str(total_time))
+    print("[+] PASSWORD = " + pwd + "\t(cracked in %.5f sec, password per second:%.2f)" % (total_time, npasswd/total_time))
 
 def dict_mode(zfile, dictionary):
+    global npasswd
     f = open(dictionary, 'rb')
     passwords = f.readlines()
     for pwd in passwords:
+        npasswd += 1
         if verify_pwd(zfile, pwd.strip()):
             f.close()
             return pwd.strip().decode("ascii")
