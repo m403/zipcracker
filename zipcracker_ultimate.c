@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <zlib.h>
-#include <bzlib.h>
 
 #include "contrib/minizip/unzip.h"
 
