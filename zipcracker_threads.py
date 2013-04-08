@@ -12,6 +12,7 @@ ZIP_LOCK = threading.Lock()
 EXIT_LOCK = threading.Condition()
 START_TIME = -1
 EXIT = False
+npasswd = 0
 
 def setExit():
     global EXIT
@@ -26,7 +27,11 @@ class ThreadPwd(threading.Thread):
         self.passwords = passwords
         self.zfile = zfile
     def run(self):
+        global npasswd;
         for line in self.passwords:
+            ZIP_LOCK.acquire()
+            npasswd += 1
+            ZIP_LOCK.release()
             if verify_pwd(self.zfile, line.strip()):
                 success(line.strip().decode("ascii"))
                 # acquire lock and weak up main thread
@@ -36,8 +41,9 @@ class ThreadPwd(threading.Thread):
                 EXIT_LOCK.release()
 
 def success(pwd):
+    global npasswd
     total_time = time() - START_TIME
-    print("[+] PASSWORD = " + pwd + "\t(cracked in %.5s sec)" % str(total_time))
+    print("[+] PASSWORD = " + pwd + "\t(cracked in %.5f sec, password per second:%.2f)" % (total_time, npasswd/total_time))
 
 def verify_pwd(zfile, password):
     global ZIP_LOCK
@@ -71,7 +77,7 @@ def dict_mode(zfile, dictionary, n_threads):
         # spawn new thread with respective chunk
         t = ThreadPwd(passwords[i:bound], zfile)
         t.start()
-        print("(%s) - chunk [%d-%d]" % (t.getName(), i, bound-1))
+       #print("(%s) - chunk [%d-%d]" % (t.getName(), i, bound-1))
     # wait until password is found
     EXIT_LOCK.acquire()
     while getExit() is False:
