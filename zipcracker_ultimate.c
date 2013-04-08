@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <zlib.h>
+#include <zip.h>
 
 #include "contrib/minizip/unzip.h"
 
@@ -16,7 +17,7 @@
 /*#define PARANOID*/
 
 char *dict_mode(unzFile, char *);
-int verify_pwd(unzFile, unz_file_info64 *, char *);
+int verify_pwd(unzFile, unz_file_info64 *, char *, struct zip *);
 char *readline(FILE *);
 void printErr(const char *msg);
 
@@ -57,6 +58,7 @@ char *dict_mode(unzFile zipfile, char *d)
     FILE *f;
     char *pwd;
     int errno;
+    struct zip *z = zip_open("tests/huge.zip", 0, &errno);
     unz_file_info64 file_info;
 
     errno = unzGetCurrentFileInfo64(zipfile, &file_info, NULL, 0, NULL, 0, NULL, 0);
@@ -81,7 +83,7 @@ char *dict_mode(unzFile zipfile, char *d)
         puts(pwd);
         #endif
 
-        errno = verify_pwd(zipfile, &file_info, pwd);
+        errno = verify_pwd(zipfile, &file_info, pwd, z);
         if(!errno)
         {
             #ifdef DEBUG
@@ -112,12 +114,21 @@ char *dict_mode(unzFile zipfile, char *d)
     return pwd;
 }
 
-int verify_pwd(unzFile zipfile, unz_file_info64 *file_info, char *pwd)
+int verify_pwd(unzFile zipfile, unz_file_info64 *file_info, char *pwd, struct zip *z)
 {    
     char *buffer;
     int errno;
     uInt ccrc;
+    /* temporaneo */
+    struct zip_file *zf = zip_fopen_index_encrypted(z, 0, 0, pwd);
+    if(zf == NULL)
+    {
+        #ifdef DEBUG
+        printf("[-] Error: zip_fopen_index_encrypted fail\n");
+        #endif
 
+        return 1;
+    }
     errno = unzOpenCurrentFilePassword(zipfile, pwd);
     if(errno != UNZ_OK)
     {
@@ -127,7 +138,6 @@ int verify_pwd(unzFile zipfile, unz_file_info64 *file_info, char *pwd)
 
         return 1;
     }
-
     buffer = (char *)calloc(FILE_BUFFER_SIZE, sizeof(char));
     #ifdef PARANOID
     if (!buffer)
