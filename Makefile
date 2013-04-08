@@ -1,6 +1,6 @@
 CC=gcc
-CFLAGS_32=-Wall -O2 -Izlib-1.2.7_32/ -D HAVE_BZIP2 
-CFLAGS_LIBZIP=-Wall -O2 -march=native
+CFLAGS_32=-Wall -O2 -Izlib-1.2.7_32/ 
+CFLAGS_LIBZIP=-Wall -O2
 
 TARGET_FOLDER_32=zlib-1.2.7_32/contrib/minizip/
 
@@ -19,7 +19,7 @@ zipcracker32:  $(ZIPC_OBJS_32)
 	$(CC) $(CFLAGS_32) -o $@ $(ZIPC_OBJS_32)
 
 zipcracker_ultimate:  $(ZIPC_OBJS_ULTIMATE)
-	$(CC) $(CFLAGS_32) -o $@ $(ZIPC_OBJS_ULTIMATE)
+	$(CC) $(CFLAGS_32) -D HAVE_BZIP2 -o $@ $(ZIPC_OBJS_ULTIMATE)
 
 zipcracker_libzip:  $(ZIPC_OBJS_LIBZIP)
 	$(CC) $(CFLAGS_LIBZIP) -o $@ $(ZIPC_OBJS_LIBZIP)

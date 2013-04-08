@@ -2,19 +2,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include <zip.h>
-#include <zlib.h>
 #include <time.h>
 
 #define MAX_WORD_LENGTH 50
-#define BUFFERSIZE 8192
+#define BUFFERSIZE 1024 //8192
 
 /*#define DEBUG*/
 
 #define OK 0
 #define ERR 1
 
-char *dictionary_mode(struct zip *, struct zip_stat *, char *);
-static int extract(struct zip *, struct zip_stat *, char *);
+char *dictionary_mode(struct zip *, char *);
+static int extract(struct zip *, char *);
 static char *readline(FILE *); 
 
 static unsigned long npwd = 0;
@@ -23,7 +22,6 @@ int main(int argc, char *argv[])
 {
     char *zip_fn, *dict_fn, *pwd;
     struct zip *z;
-    struct zip_stat zs;
     int errno;
     time_t start, end;
 
@@ -72,16 +70,8 @@ int main(int argc, char *argv[])
         exit(errno);
     }
 
-    errno = zip_stat_index(z, 0, 0, &zs);
-    if(errno != OK)
-    {
-        printf("[-] Error in zip_stat\n");
-        exit(errno);
-    }
-
-    pwd = dictionary_mode(z, &zs, dict_fn);
+    pwd = dictionary_mode(z, dict_fn);
     errno = zip_close(z);
-
     if(errno == OK && pwd != NULL)
     {
         printf("[+] Password found: %s\n", pwd);
@@ -94,36 +84,30 @@ int main(int argc, char *argv[])
     exit(0);
 }
 
-char *dictionary_mode(struct zip *z, struct zip_stat *zs, char *dict_fn)
+char *dictionary_mode(struct zip *z, char *dict_fn)
 {
     FILE *f;
     char *pwd;
-    int flag;
 
     f = fopen(dict_fn, "r");
 
-    flag = 0;
     while((pwd=readline(f)) != NULL)
     {
         npwd += 1;
-        if(extract(z, zs, pwd) == OK)
-        {
-            flag = 1;
+        if(extract(z, pwd) == OK)
             break; 
-        }
         free(pwd);
     }
 
     fclose(f);
 
-    return flag ? pwd : NULL;
+    return pwd;
 }
 
-int extract(struct zip *z, struct zip_stat *zs, char *pwd)
+int extract(struct zip *z, char *pwd)
 {
     struct zip_file *zf;
     char buf[BUFFERSIZE];
-    uInt extr_crc;
     int errno;
 
     zf = zip_fopen_index_encrypted(z, 0, 0, pwd);
@@ -136,22 +120,9 @@ int extract(struct zip *z, struct zip_stat *zs, char *pwd)
         return ERR;
     }
 
-    extr_crc = crc32(0L, Z_NULL, 0);
-    while((errno=zip_fread(zf, buf, sizeof(buf))) > 0)
-        extr_crc = crc32(extr_crc, (const Byte *)buf, (unsigned int)errno);
+    while((errno=zip_fread(zf, buf, sizeof(buf))) > 0);
 
-    if(extr_crc != zs->crc)
-    {
-        #ifdef DEBUG 
-        printf("[-] Error: Bad CRC\n");
-        printf("\tEXTR_CRC:%u\n", extr_crc);
-        printf("\tORIG_CRC:%u\n", zs->crc);
-        #endif
-
-        return ERR;
-    }
-
-    return OK;
+    return errno ? ERR : OK;
 }
 
 char *readline(FILE *fp) 

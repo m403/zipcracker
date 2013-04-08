@@ -16,7 +16,7 @@
 /*#define DEBUG*/
 /*#define PARANOID*/
 
-char *dict_mode(unzFile, char *);
+char *dict_mode(unzFile, char *, char *);
 int verify_pwd(unzFile, unz_file_info64 *, char *, struct zip *);
 char *readline(FILE *);
 void printErr(const char *msg);
@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    pwd = dict_mode(zipfile, dict);
+    pwd = dict_mode(zipfile, zip, dict);
     if(pwd)
         printf("[+] PASSWORD FOUND: %s\n", pwd);
     free(pwd);
@@ -53,13 +53,16 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-char *dict_mode(unzFile zipfile, char *d)
+char *dict_mode(unzFile zipfile, char *fn, char *d)
 {
     FILE *f;
     char *pwd;
-    int errno;
-    struct zip *z = zip_open("tests/huge.zip", 0, &errno);
+    int errno;    
     unz_file_info64 file_info;
+
+    /*temporaneo*/
+    struct zip *z = zip_open(fn, 0, &errno);
+
 
     errno = unzGetCurrentFileInfo64(zipfile, &file_info, NULL, 0, NULL, 0, NULL, 0);
     if(errno != UNZ_OK)
