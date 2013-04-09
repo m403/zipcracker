@@ -1,27 +1,14 @@
 CC=gcc
-CFLAGS_32=-Wall -O2 -Izlib-1.2.7_32/ 
-CFLAGS_LIBZIP=-Wall -O2
+CFLAGS=-Wall -O2
 
-TARGET_FOLDER_32=zlib-1.2.7_32/contrib/minizip/
+ZIPC_OBJS = zipcracker.o argparse.o /usr/lib/libzip.so 
 
-ZIPC_OBJS_32 = zipcracker.o $(TARGET_FOLDER_32)unzip.o $(TARGET_FOLDER_32)ioapi.o zlib-1.2.7_32/libz.so
-ZIPC_OBJS_ULTIMATE = zipcracker_ultimate.o $(TARGET_FOLDER_32)unzip.o $(TARGET_FOLDER_32)ioapi.o zlib-1.2.7_32/libz.so $(TARGET_FOLDER_32)libbz2.a /usr/lib/libzip.so 
-
-ZIPC_OBJS_LIBZIP = zipcracker_libzip.o argparse.o /usr/lib/libzip.so 
-
-# modificare per 32
 .c.o:
-	$(CC) -c $(CFLAGS_32) $*.c -o $@
+	$(CC) -c $(CFLAGS) $*.c -o $@
 
-all: zipcracker32 zipcracker_libzip zipcracker_ultimate
+all: zipcracker
 
-zipcracker32:  $(ZIPC_OBJS_32)
-	$(CC) $(CFLAGS_32) -o $@ $(ZIPC_OBJS_32)
-
-zipcracker_ultimate:  $(ZIPC_OBJS_ULTIMATE)
-	$(CC) $(CFLAGS_32) -D HAVE_BZIP2 -o $@ $(ZIPC_OBJS_ULTIMATE)
-
-zipcracker_libzip:  $(ZIPC_OBJS_LIBZIP)
-	$(CC) $(CFLAGS_LIBZIP) -o $@ $(ZIPC_OBJS_LIBZIP)
+zipcracker:  $(ZIPC_OBJS)
+	$(CC) $(CFLAGS) -o $@ $(ZIPC_OBJS)
 clean:
-	/bin/rm -f *.o *~ zipcracker32 zipcracker_libzip zipcracker_ultimate
+	/bin/rm -f *.o *~ zipcracker
