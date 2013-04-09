@@ -3,12 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <zip.h>
 #include "contrib/minizip/unzip.h"
 
-#define OK 0
-#define ERR 1
-#define BUFFERSIZE 1024
 #define DEBUG 0
 #define NUM_THREADS 3
 #define CHUNK 5000000
@@ -117,7 +113,6 @@ void *worker(void *index)
             pthread_mutex_unlock(&npwd_mutex);
 
             if(extract(uf, password) == UNZ_OK)
-            //if(extract(z, password) == OK)
             {
                 printf("[+] PASSWORD FOUND: %s\n", password);
                 end = time(NULL);
