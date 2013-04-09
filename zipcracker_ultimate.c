@@ -229,7 +229,7 @@ char *readline(FILE *fp)
     return str;
 }
 
-void printErr(const char *msg)
+void print_err(const char *msg)
 {
     printf("[-] ERROR: %s\n", msg);
 }

@@ -2,27 +2,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <zip.h>
-#include <getopt.h>
 #include <time.h>
 
-#define MAX_WORD_LENGTH 50
-#define BUFFERSIZE 1024 //8192
-
-/*#define DEBUG*/
+#include "zipcracker_libzip.h"
+#include "argparse.h"
 
 #define OK 0
 #define ERR 1
-
-/* PROTOTYPE */
-char *dictionary_mode(struct zip *, char *);
-static int extract(struct zip *, char *);
-static char *readline(FILE *); 
-int optparse(int, char **);
-void print_usage(FILE *, int);
-
-/* GLOBAL CONST */
-static const char *PROGRAM_NAME = "zipcracker";
-static const float PROGRAM_VERSION = 0.1;
+#define MAX_WORD_LENGTH 50
+#define BUFFERSIZE 8192
 
 /* GLOBAL VAR */
 static char *zip_fn, *dict_fn;
@@ -35,7 +23,7 @@ int main(int argc, char *argv[])
     int errno;
     time_t start, end;
 
-    if(optparse(argc, argv) != OK)
+    if(optparse(argc, argv, &zip_fn, &dict_fn) != OK)
         exit(1);
 
     start = time(NULL);
@@ -47,34 +35,34 @@ int main(int argc, char *argv[])
         switch(errno)
         {
             case ZIP_ER_INVAL:
-                printf("[-] Error: zip_fn is NULL\n");
+                print_err("zip_fn is NULL");
                 break;
             case ZIP_ER_MEMORY:
-                printf("[-] Error: required memory could not be allocated\n");
+                print_err("required memory could not be allocated");
                 break;
             case ZIP_ER_NOENT:
-                printf("[-] Error: the file specified by path does not exist and ZIP_CREATE is not set\n");
+                print_err("the file specified by path does not exist and ZIP_CREATE is not set");
                 break;
             case ZIP_ER_OPEN:
-                printf("[-] Error: the file specified by path could not be opened\n");
+                print_err("the file specified by path could not be opened");
                 break;
             case ZIP_ER_READ:
-                printf("[-] Error: a read error occurred\n");
+                print_err("read error");
                 break;
             case ZIP_ER_SEEK:
-                printf("[-] Error: the file specified by path does not allow seeks\n");
+                print_err("the file specified by path does not allow seeks");
                 break;
             case ZIP_ER_NOZIP:
-                printf("[-] Error: the file specified by path is not a zip archive\n");
+                print_err("the file specified by path is not a zip archive");
                 break;
             case ZIP_ER_EXISTS:
-                printf("[-] Error: the file specified by path exists and ZIP_EXCL is set\n");
+                print_err("the file specified by path exists and ZIP_EXCL is set");
                 break;
             case ZIP_ER_INCONS:
-                printf("[-] Error: inconsistencies were found in the file specified by path and ZIP_CHECKCONS was specified\n");
+                print_err("inconsistencies were found in the file specified by path and ZIP_CHECKCONS was specified");
                 break;
             default:
-                printf("[-] Error: boh\n");
+                print_err("boh");
         }
 
         exit(errno);
@@ -124,7 +112,7 @@ int extract(struct zip *z, char *pwd)
     if(zf == NULL)
     {
         #ifdef DEBUG
-        printf("[-] Error: zip_fopen_index_encrypted fail\n");
+        print_err("zip_fopen_index_encrypted fail");
         #endif
 
         return ERR;
@@ -143,7 +131,7 @@ char *readline(FILE *fp)
     str = (char *)calloc(MAX_WORD_LENGTH, sizeof(char));
     if(str == NULL)
     {
-        printf("[-] Error calloc fail\n");
+        print_err("calloc fail");
         exit(ERR);
     }
 
@@ -163,57 +151,7 @@ char *readline(FILE *fp)
     return str;
 }
 
-int optparse(int argc, char *argv[])
+void print_err(const char *msg)
 {
-    int nextopt;
-    int long_index;
-    static char *short_opt = "hvz:d:";
-    static struct option long_opt[] = 
-    {
-        {"help", no_argument, NULL, 'h'},
-        {"verbose", no_argument, NULL, 'v'},
-        {"zip", required_argument, NULL, 'z'},
-        {"dict", required_argument, NULL, 'd'},
-        {0, 0, 0, 0}
-    };
- 
-    long_index = 0;
-    
-    while((nextopt = getopt_long(argc, argv, short_opt, long_opt, &long_index)) != -1)
-    {
-        switch(nextopt)
-        {
-            case 'h':
-                print_usage(stdout, 0);
-            case 'v':
-                printf("%s version %.1f\n", PROGRAM_NAME, PROGRAM_VERSION);
-                exit(0);
-            case 'z':
-                zip_fn  = optarg; 
-                break;
-            case 'd':
-                dict_fn = optarg;
-                break;
-            case '?':
-                print_usage(stderr, 1);
-                break;
-            default:
-                abort();
-        }
-    }
-    if(!zip_fn || !dict_fn)
-        print_usage(stderr, 1);
-
-    return OK;
-}
-
-void print_usage(FILE *f, int errno)
-{
-    fprintf(f, "Usage:  %s [options]\n", PROGRAM_NAME);
-    fprintf(f, "Options:\n");
-    fprintf(f, "  -h  --help        Display this usage information.\n");
-    fprintf(f, "  -v  --version     Display program version info\n");
-    fprintf(f, "  -z  --zip         Specify the zip file to crack\n");
-    fprintf(f, "  -d  --dict        Specify the dictionary file to use\n");
-    exit(errno);
+    printf("[-] ERROR: %s\n", msg);
 }
