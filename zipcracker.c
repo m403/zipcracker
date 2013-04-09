@@ -1,107 +1,139 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <zip.h>
 #include <time.h>
 
-#include "contrib/minizip/unzip.h"
+#include "zipcracker.h"
+#include "argparse.h"
 
+#define OK 0
+#define ERR 1
 #define MAX_WORD_LENGTH 50
-#define BUFF_SIZE 2
+#define BUFFERSIZE 8192
 
-char *readline(FILE *);
-int dictionary_mode(const char *, const char *);
-int extract(unzFile, char *);
-unsigned long npwd;
+/* GLOBAL VAR */
+static char *zip_fn, *dict_fn;
+static unsigned long npwd = 0;
 
 int main(int argc, char *argv[])
 {
-    const char *zipfilename = argv[1];
-    const char *dictionary = argv[2];
+    char *pwd;
+    struct zip *z;
+    int errno;
     time_t start, end;
-    npwd = 0;
+
+    if(optparse(argc, argv, &zip_fn, &dict_fn) != OK)
+        exit(1);
+
     start = time(NULL);
-    
-    if(dictionary_mode(zipfilename,dictionary) == -1)
-        printf("[-] Error\n");
+
+    z = zip_open(zip_fn, 0, &errno);
+
+    if(z == NULL)
+    {
+        switch(errno)
+        {
+            case ZIP_ER_INVAL:
+                print_err("zip_fn is NULL");
+                break;
+            case ZIP_ER_MEMORY:
+                print_err("required memory could not be allocated");
+                break;
+            case ZIP_ER_NOENT:
+                print_err("the file specified by path does not exist and ZIP_CREATE is not set");
+                break;
+            case ZIP_ER_OPEN:
+                print_err("the file specified by path could not be opened");
+                break;
+            case ZIP_ER_READ:
+                print_err("read error");
+                break;
+            case ZIP_ER_SEEK:
+                print_err("the file specified by path does not allow seeks");
+                break;
+            case ZIP_ER_NOZIP:
+                print_err("the file specified by path is not a zip archive");
+                break;
+            case ZIP_ER_EXISTS:
+                print_err("the file specified by path exists and ZIP_EXCL is set");
+                break;
+            case ZIP_ER_INCONS:
+                print_err("inconsistencies were found in the file specified by path and ZIP_CHECKCONS was specified");
+                break;
+            default:
+                print_err("boh");
+        }
+
+        exit(errno);
+    }
+
+    pwd = dictionary_mode(z, dict_fn);
+    errno = zip_close(z);
+    if(errno == OK && pwd != NULL)
+    {
+        printf("[+] Password found: %s\n", pwd);
+        free(pwd);
+    }
 
     end = time(NULL);
-    printf("CRACKED IN %d sec\t(password per sec:%lu)\n", end-start, npwd/(end-start));
+    printf("TIME: %lu\t(password per second: %lu)\n", end-start, npwd/(end-start));
 
-    return 0;
+    exit(0);
 }
 
-int dictionary_mode(const char *zipfilename, const char *dict)
+char *dictionary_mode(struct zip *z, char *dict_fn)
 {
-    FILE *fp_dict;
-    unzFile uf;
-    char *password;
+    FILE *f;
+    char *pwd;
 
-    password = (char*)calloc(MAX_WORD_LENGTH, sizeof(password));
+    f = fopen(dict_fn, "r");
 
-    uf = unzOpen64(zipfilename);
-    if(uf == NULL)
+    while((pwd=readline(f)) != NULL)
     {
-        printf("[-] ERROR: Failed to open %s\n", zipfilename);
-        return -1;
-    }
-
-    fp_dict = fopen(dict, "r");
-
-    do
-    {
-        password = readline(fp_dict);
         npwd += 1;
-        if(extract(uf, password) == UNZ_OK)
-        {
-            printf("[+] PASSWORD FOUND: %s\n", password);        
-            free(password);
-            return 0;
-        }
-    }while(password != NULL);
-
-    free(password);
-
-    return -1;
-}
-
-int extract(unzFile f, char *password)
-{
-    int err;
-    void *buffer;
-    uInt buff_size = BUFF_SIZE;
-    
-    err = unzOpenCurrentFilePassword(f, password);
-    if(err != UNZ_OK)
-    {
-        printf("[-] Error %d\n", err);
-        return err;
+        if(extract(z, pwd) == OK)
+            break; 
+        free(pwd);
     }
 
-    buffer = (void*)malloc(buff_size);
-    do
+    fclose(f);
+
+    return pwd;
+}
+
+int extract(struct zip *z, char *pwd)
+{
+    struct zip_file *zf;
+    char buf[BUFFERSIZE];
+    int errno;
+
+    zf = zip_fopen_index_encrypted(z, 0, 0, pwd);
+    if(zf == NULL)
     {
-        err = unzReadCurrentFile(f, buffer, buff_size);
-        if(err < 0)
-        {
-            printf("[-] Error %d\n", err);
-            free(buffer);
-            return err;
-        }
-    }while(err != 0);
+        #ifdef DEBUG
+        print_err("zip_fopen_index_encrypted fail");
+        #endif
 
-    free(buffer);
+        return ERR;
+    }
 
-    err = unzCloseCurrentFile(f);
-    if(err != UNZ_OK)
-        return err;
+    while((errno=zip_fread(zf, buf, sizeof(buf))) > 0);
 
-    return UNZ_OK;
+    return errno ? ERR : OK;
 }
 
 char *readline(FILE *fp) 
 {
-    char *str = calloc(MAX_WORD_LENGTH, sizeof(char));
+    char *str;
     int str_leng, i;
+
+    str = (char *)calloc(MAX_WORD_LENGTH, sizeof(char));
+    if(str == NULL)
+    {
+        print_err("calloc fail");
+        exit(ERR);
+    }
 
     if(!fgets(str, MAX_WORD_LENGTH, fp))
     {
@@ -117,4 +149,9 @@ char *readline(FILE *fp)
         }
     }
     return str;
+}
+
+void print_err(const char *msg)
+{
+    printf("[-] ERROR: %s\n", msg);
 }
