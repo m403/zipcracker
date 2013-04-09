@@ -24,7 +24,6 @@ pthread_mutex_t position_mutex;
 /* prototypes */
 void *worker(void *);
 int extract(unzFile, char *);
-//int extract(struct zip *, char *);
 
 int main (int argc, char *argv[])
 {
