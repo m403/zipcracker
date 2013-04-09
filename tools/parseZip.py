@@ -21,7 +21,7 @@ def createCdhEntry(cdh_entry):
 	d['compression'] = struct.unpack("<h", cdh_entry[10:12])[0]
 	d['mod_time'] = struct.unpack("<h", cdh_entry[12:14])[0]
 	d['mod_date'] = struct.unpack("<h", cdh_entry[14:16])[0]
-	d['crc32'] = cdh_entry[16:20]
+	d['crc32'] = struct.unpack("I", cdh_entry[16:20])
 	d['compressed_size'] = struct.unpack("<I", cdh_entry[20:24])[0]
 	d['uncompressed_size'] = struct.unpack("<I", cdh_entry[24:28])[0]
 	d['filename_length'] = struct.unpack("<h", cdh_entry[28:30])[0]
@@ -41,16 +41,18 @@ def createCdhEntry(cdh_entry):
 
 def getCdhEntry(zipname, filename):
     cdh = extractCdh(zipname)
+    if filename is None:
+        return [createCdhEntry(entry) for entry in cdh]
     return [createCdhEntry(entry) for entry in cdh if createCdhEntry(entry)['filename'] == filename][0]
 
 if __name__ == "__main__":
-	if len(sys.argv) < 3:
-		print("Usage: python %s 'zipname' 'filename'" % sys.argv[0])
-		exit(1)
-	zipname = open(sys.argv[1], 'rb').read()
-	print("Central directory:")
-	cdh = extractCdh(zipname)
-	for entry in cdh:
-		print(createCdhEntry(entry))
-	print()
-	print("CRC32 of %s: %s" % (sys.argv[2], str(getCdhEntry(zipname, sys.argv[2])['crc32'])))
+        if len(sys.argv) < 3:
+                print("Usage: python %s 'zipname' 'filename'" % sys.argv[0])
+                exit(1)
+        zipname = open(sys.argv[1], 'rb').read()
+        print("Central directory:")
+        cdh = extractCdh(zipname)
+        for entry in cdh:
+	        print(createCdhEntry(entry))
+        print()
+        print("CRC32 of %s: %s" % (sys.argv[2], str(getCdhEntry(zipname, sys.argv[2])['crc32'])[1:-2]))
