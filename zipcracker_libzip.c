@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <zip.h>
+#include <getopt.h>
 #include <time.h>
 
 #define MAX_WORD_LENGTH 50
@@ -12,23 +13,32 @@
 #define OK 0
 #define ERR 1
 
+/* PROTOTYPE */
 char *dictionary_mode(struct zip *, char *);
 static int extract(struct zip *, char *);
 static char *readline(FILE *); 
+int optparse(int, char **);
+void print_usage(FILE *, int);
 
+/* GLOBAL CONST */
+static const char *PROGRAM_NAME = "zipcracker";
+static const float PROGRAM_VERSION = 0.1;
+
+/* GLOBAL VAR */
+static char *zip_fn, *dict_fn;
 static unsigned long npwd = 0;
 
 int main(int argc, char *argv[])
 {
-    char *zip_fn, *dict_fn, *pwd;
+    char *pwd;
     struct zip *z;
     int errno;
     time_t start, end;
 
-    start = time(NULL);
+    if(optparse(argc, argv) != OK)
+        exit(1);
 
-    zip_fn = argv[1];
-    dict_fn = argv[2];
+    start = time(NULL);
 
     z = zip_open(zip_fn, 0, &errno);
 
@@ -151,4 +161,59 @@ char *readline(FILE *fp)
         }
     }
     return str;
+}
+
+int optparse(int argc, char *argv[])
+{
+    int nextopt;
+    int long_index;
+    static char *short_opt = "hvz:d:";
+    static struct option long_opt[] = 
+    {
+        {"help", no_argument, NULL, 'h'},
+        {"verbose", no_argument, NULL, 'v'},
+        {"zip", required_argument, NULL, 'z'},
+        {"dict", required_argument, NULL, 'd'},
+        {0, 0, 0, 0}
+    };
+ 
+    long_index = 0;
+    
+    while((nextopt = getopt_long(argc, argv, short_opt, long_opt, &long_index)) != -1)
+    {
+        switch(nextopt)
+        {
+            case 'h':
+                print_usage(stdout, 0);
+            case 'v':
+                printf("%s version %.1f\n", PROGRAM_NAME, PROGRAM_VERSION);
+                exit(0);
+            case 'z':
+                zip_fn  = optarg; 
+                break;
+            case 'd':
+                dict_fn = optarg;
+                break;
+            case '?':
+                print_usage(stderr, 1);
+                break;
+            default:
+                abort();
+        }
+    }
+    if(!zip_fn || !dict_fn)
+        print_usage(stderr, 1);
+
+    return OK;
+}
+
+void print_usage(FILE *f, int errno)
+{
+    fprintf(f, "Usage:  %s [options]\n", PROGRAM_NAME);
+    fprintf(f, "Options:\n");
+    fprintf(f, "  -h  --help        Display this usage information.\n");
+    fprintf(f, "  -v  --version     Display program version info\n");
+    fprintf(f, "  -z  --zip         Specify the zip file to crack\n");
+    fprintf(f, "  -d  --dict        Specify the dictionary file to use\n");
+    exit(errno);
 }
