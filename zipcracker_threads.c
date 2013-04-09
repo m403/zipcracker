@@ -3,16 +3,19 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "contrib/minizip/unzip.h"
+#include <zip.h>
+//#include "contrib/minizip/unzip.h"
 
+#define OK 0
+#define ERR 1
+#define BUFFERSIZE 1024
 #define DEBUG 1
 #define NUM_THREADS 3
 #define CHUNK 500000
 #define MAX_WORD_LENGTH 50
 #define MIN(n1,n2) n1<n2?n1:n2
 
-char *zipfilename;
-char *dictname;
+char *zipfilename, *dictname;
 unsigned long num_pwd = 0;
 unsigned long position = SEEK_SET;
 time_t start,end;
@@ -24,7 +27,8 @@ pthread_mutex_t position_mutex;
 
 /* prototypes */
 void *worker(void *);
-int extract(unzFile, char *);
+//int extract(unzFile, char *);
+int extract(struct zip *, char *);
 
 int main (int argc, char *argv[])
 {
@@ -35,7 +39,7 @@ int main (int argc, char *argv[])
     start = time(NULL);
     zipfilename = argv[1];
     dictname = argv[2];
-    
+     
     /* Initialize mutex objects */
     pthread_mutex_init(&npwd_mutex, NULL);
     pthread_mutex_init(&position_mutex, NULL);
@@ -70,14 +74,15 @@ void *worker(void *index)
         printf("Worker-thread(%d): Started\n", (int)index);
 
     FILE *fp_dict = fopen(dictname, "r");
-    int initial_pos = SEEK_SET, filesize, chunk;
+    int initial_pos = SEEK_SET, filesize, chunk, errno;
     char *buf, *ptr_start, *ptr_end, *password;
-    unzFile uf = unzOpen64(zipfilename);
-    if(uf == NULL)
-    {
-        printf("[-] ERROR: Failed to open %s\n", zipfilename);
-        exit(0);
-    }
+    struct zip *z = zip_open(zipfilename, 0, &errno);
+    /*unzFile uf = unzOpen64(zipfilename);*/
+    /*if(uf == NULL)*/
+    /*{*/
+        /*printf("[-] ERROR: Failed to open %s\n", zipfilename);*/
+        /*exit(0);*/
+    /*}*/
     fseek(fp_dict, 0, SEEK_END);
     filesize = ftell(fp_dict);
 
@@ -110,9 +115,9 @@ void *worker(void *index)
 
             pthread_mutex_lock(&npwd_mutex);
             num_pwd += 1;
-            pthread_mutex_unlock(&npwd_mutex);
 
-            if(extract(uf, password) == UNZ_OK)
+            //if(extract(uf, password) == UNZ_OK)
+            if(extract(z, password) == OK)
             {
                 printf("[+] PASSWORD FOUND: %s\n", password);
                 end = time(NULL);
@@ -121,6 +126,7 @@ void *worker(void *index)
                 fclose(fp_dict);
                 exit(0);
             }
+            pthread_mutex_unlock(&npwd_mutex);
             ptr_start = ptr_end;
         }
         free(buf);
@@ -128,38 +134,60 @@ void *worker(void *index)
     fclose(fp_dict);
     if (DEBUG)
         printf("Worker-thread() %d: Exit\n", (int)index);
+    errno = zip_close(z);
     pthread_exit(NULL);
 }
 
-int extract(unzFile f, char *password)
+int extract(struct zip *z, char *pwd)
 {
-    int err;
-    void *buffer;
-    uInt buff_size = 2048*2;
-    
-    err = unzOpenCurrentFilePassword(f, password);
-    if(err != UNZ_OK)
+    struct zip_file *zf;
+    char buf[BUFFERSIZE];
+    int errno;
+
+    zf = zip_fopen_index_encrypted(z, 0, 0, pwd);
+    if(zf == NULL)
     {
-        printf("[-] Error %d\n", err);
-        return err;
+        #ifdef DEBUG
+        printf("[-] Error: zip_fopen_index_encrypted fail\n");
+        #endif
+
+        return ERR;
     }
 
-    buffer = (void*)malloc(buff_size);
-    do
-    {
-        err = unzReadCurrentFile(f, buffer, buff_size);
-        if(err < 0)
-        {
-            printf("[-] Error %d\n", err);
-            free(buffer);
-            return err;
-        }
-    }while(err != 0);
+    while((errno=zip_fread(zf, buf, sizeof(buf))) > 0);
 
-    free(buffer);
-
-    err = unzCloseCurrentFile(f);
-    if(err != UNZ_OK)
-        return err;
-    return UNZ_OK;
+    return errno ? ERR : OK;
 }
+
+/*int extract(unzFile f, char *password)*/
+/*{*/
+    /*int err;*/
+    /*void *buffer;*/
+    /*uInt buff_size = 2048*2;*/
+    
+    /*err = unzOpenCurrentFilePassword(f, password);*/
+    /*if(err != UNZ_OK)*/
+    /*{*/
+        /*printf("[-] Error %d\n", err);*/
+        /*return err;*/
+    /*}*/
+
+    /*buffer = (void*)malloc(buff_size);*/
+    /*do*/
+    /*{*/
+        /*err = unzReadCurrentFile(f, buffer, buff_size);*/
+        /*if(err < 0)*/
+        /*{*/
+            /*printf("[-] Error %d\n", err);*/
+            /*free(buffer);*/
+            /*return err;*/
+        /*}*/
+    /*}while(err != 0);*/
+
+    /*free(buffer);*/
+
+    /*err = unzCloseCurrentFile(f);*/
+    /*if(err != UNZ_OK)*/
+        /*return err;*/
+    /*return UNZ_OK;*/
+/*}*/
