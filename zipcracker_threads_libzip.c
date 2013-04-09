@@ -10,7 +10,7 @@
 #define BUFFERSIZE 1024
 #define DEBUG 0
 #define NUM_THREADS 3
-#define CHUNK 5000000
+#define CHUNK 50000000
 #define MAX_WORD_LENGTH 50
 #define MIN(n1,n2) n1<n2?n1:n2
 
